@@ -14,6 +14,8 @@
 from http import HTTPStatus
 from typing import List
 
+from typing_extensions import Literal
+
 from centraldogma.base_client import BaseClient
 from centraldogma.data import Project
 
@@ -53,4 +55,21 @@ class ProjectService:
         handler = {HTTPStatus.NO_CONTENT: lambda resp: None}
         return self.client.request(
             "delete", f"/projects/{name}/removed", handler=handler
+        )
+
+    def add_token(
+        self, name: str, token_id: str, role: Literal["MEMBER", "OWNER"]
+    ) -> int:
+        return self.client.request(
+            "post",
+            f"/metadata/{name}/tokens",
+            json={"id": token_id, "role": role},
+            handler={HTTPStatus.OK: lambda resp: int(resp.text)},
+        )
+
+    def remove_token(self, name: str, token_id: str):
+        return self.client.request(
+            "delete",
+            f"/metadata/{name}/tokens/{token_id}",
+            handler={HTTPStatus.NO_CONTENT: lambda resp: None},
         )

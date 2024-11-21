@@ -78,6 +78,16 @@ mock_merge_result = {
     "paths": ["/test.json", "/test2.json", "/test3.json"],
 }
 
+mock_create_new_token = {
+    "appId": "example-token",
+    "secret": "appToken-11111111-dddd-cccc-9999-dddddddddddd",
+    "admin": False,
+    "creation": {
+        "user": "yifan.yuan@10.247.52.122",
+        "timestamp": "2024-11-21T13:27:52.349156438Z",
+    },
+}
+
 
 def test_list_projects(respx_mock):
     url = f"{base_url}/api/v1/projects"
@@ -530,3 +540,17 @@ def test_merge(respx_mock):
     request = respx_mock.calls.last.request
     assert request.url == url
     assert ret.content == {"foo": "bar"}
+
+
+def test_add_token_to_project(respx_mock):
+    url = f"{base_url}/api/v1/tokens"
+    route = respx_mock.post(url).mock(
+        return_value=Response(HTTPStatus.CREATED, json=mock_create_new_token)
+    )
+    ret = client.create_new_token("example-token", is_admin=False)
+    assert route.called
+    request = respx_mock.calls.last.request
+    assert request.url == url
+    assert ret.app_id == mock_create_new_token["appId"]
+    assert ret.secret == mock_create_new_token["secret"]
+    assert ret.admin == mock_create_new_token["admin"]

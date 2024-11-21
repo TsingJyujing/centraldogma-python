@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import os
-from typing import List, Optional, TypeVar, Callable
+from typing import List, Optional, TypeVar, Callable, Literal
 
 from centraldogma.base_client import BaseClient
 from centraldogma.content_service import ContentService
@@ -26,6 +26,8 @@ from centraldogma.data import (
     Project,
     PushResult,
     Repository,
+    CreatedToken,
+    Token,
 )
 from centraldogma.data.entry import Entry
 from centraldogma.data.merge_source import MergeSource
@@ -35,6 +37,7 @@ from centraldogma.project_service import ProjectService
 from centraldogma.query import Query
 from centraldogma.repository_service import RepositoryService
 from centraldogma.repository_watcher import RepositoryWatcher, FileWatcher
+from centraldogma.token_service import TokenService
 from centraldogma.watcher import Watcher
 
 T = TypeVar("T")
@@ -65,6 +68,7 @@ class Dogma:
         self.project_service = ProjectService(self.base_client)
         self.repository_service = RepositoryService(self.base_client)
         self.content_service = ContentService(self.base_client)
+        self.token_service = TokenService(self.base_client)
 
     def list_projects(self, removed: bool = False) -> List[Project]:
         """Lists all projects, in the order that they were created on the Central Dogma server."""
@@ -329,3 +333,43 @@ class Dogma:
         return self.content_service.merge_files(
             project_name, repo_name, merge_sources, json_paths or [], revision
         )
+
+    def create_new_token(self, token_id: str, is_admin: bool = False) -> CreatedToken:
+        """Creates a new token"""
+        return self.token_service.create(token_id, is_admin)
+
+    def list_tokens(self) -> List[Token]:
+        """Lists all tokens"""
+        return self.token_service.list()
+
+    def remove_token(self, token_id: str) -> None:
+        """Removes a token"""
+        return self.token_service.delete(token_id)
+
+    def add_token_to_project(
+        self, project_name: str, token_id: str, role: Literal["MEMBER", "OWNER"]
+    ) -> int:
+        """Adds a token to a project"""
+        return self.project_service.add_token(project_name, token_id, role)
+
+    def remove_token_from_project(self, project_name: str, token_id: str) -> None:
+        """Removes a token from a project"""
+        return self.project_service.remove_token(project_name, token_id)
+
+    def add_token_to_repository(
+        self,
+        project_name: str,
+        repo_name: str,
+        token_id: str,
+        permissions: List[Literal["READ", "WRITE"]],
+    ) -> int:
+        """Adds a token to a repository"""
+        return self.repository_service.add_token(
+            project_name, repo_name, token_id, permissions
+        )
+
+    def remove_token_from_repository(
+        self, project_name: str, repo_name: str, token_id: str
+    ) -> None:
+        """Removes a token from a repository"""
+        return self.repository_service.remove_token(project_name, repo_name, token_id)

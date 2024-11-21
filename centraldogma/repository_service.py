@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from http import HTTPStatus
-from typing import List
+from typing import List, Literal
 
 from centraldogma.base_client import BaseClient
 from centraldogma.data import Repository
@@ -71,4 +71,25 @@ class RepositoryService:
             "get",
             f"/projects/{project_name}/repos/{name}/revision/{revision}",
             handler=handler,
+        )
+
+    def add_token(
+        self,
+        project: str,
+        repository: str,
+        token_id: str,
+        permissions: List[Literal["READ", "WRITE"]],
+    ) -> int:
+        self.client.request(
+            "post",
+            f"/metadata/{project}/repos/{repository}/perm/tokens",
+            json={"id": token_id, "permissions": permissions},
+            handler={HTTPStatus.OK: lambda resp: int(resp.text)},
+        )
+
+    def remove_token(self, project: str, repository: str, token_id: str):
+        self.client.request(
+            "delete",
+            f"/metadata/{project}/repos/{repository}/perm/tokens/{token_id}",
+            handler={HTTPStatus.NO_CONTENT: lambda resp: None},
         )
